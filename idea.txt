@@ -1,0 +1,7 @@
+* idea
+- fre + time loss -> loss
+- 과거의 추정치 연결되어 활용 필요 -> network structure
+- signal quality에 따른 loss 가중치 부여 또는 과거 정보만 활용하는 추정값에 가중치 -> training technique
+- delay를 고려하여 결과 산출 protocol을 어떻게 구현할 것인가 고민 -> frame
+- rr이 너무 빠르거나 느린 데이터 고민 -> training technique
+- attention 요소 고민 -> network structure
