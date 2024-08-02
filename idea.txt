@@ -5,3 +5,12 @@
 - delay를 고려하여 결과 산출 protocol을 어떻게 구현할 것인가 고민 -> frame
 - rr이 너무 빠르거나 느린 데이터 고민 -> training technique
 - attention 요소 고민 -> network structure
+
+
+* 오류 이유
+- 높은 rr, 초반에 못 따라감
+- second peak로 빠짐, ground도 마찬가지
+- gt 패턴 자체가 abnormal
+- 저주파 fluctuation: rr과 관련 없는 저주파 잡음이 ppg에 존재
+- 높은 rr: 고주파 추정을 아예 못한 + 저주파 fluctuation + 신호 lost
+- 낮은 rr 추정 못함 + 사각파형 resp
