@@ -14,3 +14,5 @@
 - 저주파 fluctuation: rr과 관련 없는 저주파 잡음이 ppg에 존재
 - 높은 rr: 고주파 추정을 아예 못한 + 저주파 fluctuation + 신호 lost
 - 낮은 rr 추정 못함 + 사각파형 resp
+- 저주파 second peak로 빠짐
+- 부정맥
