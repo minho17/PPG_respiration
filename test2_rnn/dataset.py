@@ -16,7 +16,7 @@ class dataset1(Dataset):
 
         self.n_win = int((n_sig - win_anal)/win_move) + 1
         # self.n_data = n_sub * self.n_win
-        self.data = np.zeros((self.n_sub,self.n_win, win_anal,2))
+        self.data = np.zeros((self.n_win, self.n_sub, win_anal,2))
         self.raw_sig = data1.copy()
         self.batch_index = np.array([i for i in range(self.n_sub)])
 
@@ -24,21 +24,21 @@ class dataset1(Dataset):
             for i1 in range(self.n_win):
                 ind_start = i1*win_move
                 temp_sig = data1[ i, ind_start : ind_start + win_anal, 0 ]
-                self.data[i, i1,:,0] = (temp_sig - np.mean(temp_sig)) / np.std(temp_sig)
+                self.data[i1, i,:,0] = (temp_sig - np.mean(temp_sig)) / np.std(temp_sig)
 
                 temp_sig = data1[ i, ind_start : ind_start + win_anal, 1 ]
-                self.data[i, i1,:,1] = (temp_sig - np.mean(temp_sig)) / np.std(temp_sig)
+                self.data[i1, i,:,1] = (temp_sig - np.mean(temp_sig)) / np.std(temp_sig)
 
     def change_batch_ind(self,index):
         self.batch_index = index
 
     def __getitem__(self, index): 
-        x = np.squeeze(self.data[self.batch_index,index,:,0])
-        y =  np.squeeze(self.data[self.batch_index,index,:,1])
+        x = np.squeeze(self.data[index, self.batch_index,:,0])
+        y =  np.squeeze(self.data[index, self.batch_index,:,1])
         return x, y
     
     def __len__(self):
-        return self.n_sub
+        return self.n_win
 
 
 

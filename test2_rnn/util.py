@@ -80,17 +80,17 @@ def cal_performance2(data,fs, win_anal, win_move, n_win, true_resp,flag_debug = 
 
 
 def cal_performance3(data,fs, win_anal, win_move, n_win, raw_sig, flag_pic = 0):
-    n_data = data.shape[0]
-    n_sub = int(n_data/n_win)
+    n_sub = data.shape[0]
 
-    mse = mean_squared_error(data[:,:,0],data[:,:,1])
+    mse = 0
     rr_mae = np.zeros((n_sub,2))
     true_rr = np.zeros((n_sub,2))
     for i in range(n_sub):
+        mse = mse + mean_squared_error(data[i,:,:,0],data[i,:,:,1])
         re_data = np.zeros((win_anal + win_move * (n_win-1),2))
         for i1 in range(n_win):
             w_start = win_move*i1
-            temp = data[ i*n_win + i1,:,0].copy() 
+            temp = data[ i, i1,:,0].copy() 
             re_data[w_start:w_start+win_anal,0] = re_data[w_start:w_start+win_anal,0] + (temp - np.mean(temp) )
             re_data[w_start:w_start+win_anal,1] = re_data[w_start:w_start+win_anal,1] + np.ones((win_anal))
 
@@ -120,6 +120,7 @@ def cal_performance1(data,fs, win_anal, win_move, n_win, raw_sig, flag_pic = 0):
     rr_mae = np.zeros((n_sub,2))
     true_rr = np.zeros((n_sub,2))
     for i in range(n_sub):
+
         mse = mse + mean_squared_error(data[i,:,:,0],data[i,:,:,1])
 
         re_data = np.zeros((win_anal + win_move * (n_win-1),2))

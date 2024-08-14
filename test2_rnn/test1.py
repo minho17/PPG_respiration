@@ -21,8 +21,8 @@ from sklearn.metrics import mean_squared_error
 
 def main():
 
-    path_target = 'D1_2024-08-02_17_32_38'
-    flag_pic = 0
+    path_target = 'D0_2024-08-13_16_04_05'
+    flag_pic = 1
 
     path_result = os.getcwd() + '/result/' + path_target
     n_folder = 0
@@ -47,7 +47,7 @@ def main():
     win_anal = int(win_anal*fs)
     win_move = int(win_move*fs)
 
-    log = util.log(path_result + '/log_te2.txt')
+    log = util.log(path_result + '/log_te.txt')
     log.w('Data: ' + str(flag_data) + ' / win_anal: ' + str(win_anal) + ' / win_move: ' + str(win_move) + "\n")
 
     results = np.zeros((n_folder,3))
@@ -70,7 +70,7 @@ def main():
         gc.collect()
         device = torch.device('cuda:0' if torch.cuda.is_available() else "cpu")
 
-        model = build_model.Correncoder_model( [8,8,8], [150,75,50], [20,20,10], 0.5).to(device)
+        model = build_model.Correncoder_LSTM( [8,8,8], [150,75,50], [20,20,10], 0.5,1,device).to(device)
         loss_func = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
         scaler = torch.cuda.amp.GradScaler(enabled=True)

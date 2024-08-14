@@ -26,11 +26,13 @@ def main():
     flag_data = 0 # 0=Capno / 1=BIDMC
     flag_re_train = 0
 
+    path_target = 'C:/Users/USER/Desktop/minho/PPG_resp/algorithm/python/test1/result/D0_2024-07-25_17_01_02/'
+
     n_epoc = 100
     batch_size = 5
     lr = 0.0001
 
-    win_anal = 10
+    win_anal = 9.6
     win_move = 1
 
     if flag_re_train == 1:
@@ -62,6 +64,7 @@ def main():
     torch.cuda.empty_cache()
     gc.collect()
     device = torch.device('cuda:0' if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cpu")
     
     result = np.zeros((n_sub,3))
     for ind_te in range(start_sub,n_sub):
@@ -73,8 +76,38 @@ def main():
         path_result3 = path_result2 + '/model'
         os.makedirs(path_result3)
 
-        model = build_model.Correncoder_model( [8,8,8], [150,75,50], [20,20,10], 0.5).to(device)
+        model = build_model.Correncoder_LSTM( [8,8,8], [150,75,50], [20,20,10], 0.5,batch_size,device).to(device)
         # print(summary(model, torch.zeros(batch_size,1,win_anal), show_input=False))
+
+        path_target2 = path_target + str(ind_te) + '/model/'
+        model0 = build_model.Correncoder_model( [8,8,8], [150,75,50], [20,20,10], 0.5).to(device)
+        optimizer0 = torch.optim.Adam(model0.parameters(), lr=lr)
+        [model0,optim,_] = util.load(ckpt_dir = path_target2 , net=model0, optim=optimizer0)
+        model.layer1 = model0.layer1
+        model.layer2 = model0.layer2
+        model.layer3 = model0.layer3
+        model.layer4 = model0.layer4
+        model.layer5 = model0.layer5
+        model.layer6 = model0.layer6
+
+        for param in model.layer1.parameters():
+            param.requires_grad = False
+
+        for param in model.layer2.parameters():
+            param.requires_grad = False
+
+        for param in model.layer3.parameters():
+            param.requires_grad = False
+
+        for param in model.layer4.parameters():
+            param.requires_grad = False
+
+        for param in model.layer5.parameters():
+            param.requires_grad = False
+
+        for param in model.layer6.parameters():
+            param.requires_grad = False
+
 
         loss_func = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -87,7 +120,6 @@ def main():
 
         n_sub_tr = len(ind_tr)
         n_batch = int(n_sub_tr/batch_size)
-        n_last_batch = n_sub_tr - n_batch*batch_size
 
         tr_data = dataset1(ind_tr, data, win_anal, win_move) 
         val_data = dataset1(ind_val, data, win_anal, win_move)
@@ -103,7 +135,6 @@ def main():
             tr_loss = []
             model.train()
             shuffle(ind_tr2)
-
             for i_batch in range(n_batch + 1):
                 if i_batch == n_batch:
                     ind_tr3 = ind_tr2[ i_batch*batch_size  : ]
@@ -113,38 +144,32 @@ def main():
                 tr_data.change_batch_ind(ind_tr3)
                 loader_tr = DataLoader(tr_data, batch_size=1, shuffle=False, num_workers=2)
 
+                model.init = 1
                 pbar = tqdm(enumerate(loader_tr), total=len(loader_tr), leave = False ,bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
 
                 for batch, (sig,label) in pbar:
                     x = torch.swapaxes(sig.to(torch.float32).to(device),0,1)
                     y = torch.swapaxes(label.to(torch.float32).to(device),0,1)
 
+                    # if flag_plot == 1:
+                    #     plt.figure(1)
+                    #     plt.subplot(2,1,1)
+                    #     plt.plot(np.squeeze(x[0,0,:].detach().cpu().numpy()))
+                    #     plt.subplot(2,1,2)
+                    #     plt.plot(np.squeeze(y[0,0,:].detach().cpu().numpy()))
+        
 
-                    # plt.figure(1)
-                    # plt.subplot(2,1,1)
-                    # plt.plot(np.squeeze(x[0,0,:].detach().cpu().numpy()))
-                    # plt.subplot(2,1,2)
-                    # plt.plot(np.squeeze(y[0,0,:].detach().cpu().numpy()))
-     
-
-                    # plt.figure(2)
-                    # plt.subplot(2,1,1)
-                    # plt.plot(np.squeeze(x[4,0,:].detach().cpu().numpy()))
-                    # plt.subplot(2,1,2)
-                    # plt.plot(np.squeeze(y[4,0,:].detach().cpu().numpy()))
-                    # # plt.show()
+                    #     # plt.figure(2)
+                    #     # plt.subplot(2,1,1)
+                    #     # plt.plot(np.squeeze(x[4,0,:].detach().cpu().numpy()))
+                    #     # plt.subplot(2,1,2)
+                    #     # plt.plot(np.squeeze(y[4,0,:].detach().cpu().numpy()))
+                    #     plt.show()
 
                     # a=1
                     optimizer.zero_grad()
                     with torch.cuda.amp.autocast(enabled=True):
                         out = model.forward(x)
-
-                        # plt.figure(3)
-                        # plt.plot(np.squeeze(out[0,0,:].detach().cpu().numpy()))
-                        # plt.show()
-
-                        # a=1
-
                         loss = loss_func(out, y)
                     
                     scaler.scale(loss).backward()
@@ -153,7 +178,6 @@ def main():
                     
                     pbar.set_description(f"Ep {i_epoc} _ Bat {i_batch}")
                     pbar.set_postfix(loss = int(loss.cpu().detach().numpy()*1000) )
-                    
                     tr_loss.append(loss.cpu().detach().numpy())
 
             model.eval()
