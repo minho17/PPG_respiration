@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 
 def main():
     flag_data = 0 # 0=Capno / 1=BIDMC
-    flag_re_train = 0
+    flag_re_train = 1
 
     path_target = 'C:/Users/USER/Desktop/minho/PPG_resp/algorithm/python/test1/result/D0_2024-07-25_17_01_02/'
 
@@ -36,8 +36,8 @@ def main():
     win_move = 1
 
     if flag_re_train == 1:
-        start_sub = 12
-        path_result = os.getcwd() + '/result/' + 'D1_2024-07-26_14_02_02'
+        start_sub = 6
+        path_result = os.getcwd() + '/result/' + 'D0_2024-08-14_16_11_43'
         log = util.log(path_result + '/log_tr.txt',1)
         log.w('===== retrain ===='+"\n")
     else:

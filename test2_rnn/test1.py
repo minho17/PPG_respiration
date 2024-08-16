@@ -21,7 +21,7 @@ from sklearn.metrics import mean_squared_error
 
 def main():
 
-    path_target = 'D0_2024-08-13_16_04_05'
+    path_target = 'D0_2024-08-14_16_11_43'
     flag_pic = 1
 
     path_result = os.getcwd() + '/result/' + path_target
