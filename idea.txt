@@ -1,3 +1,11 @@
+* 개선 방향
+- 추정 rr 길이에 맞춘 net: 32s, 64s
+- time과 frequency에 대한 두가지 output
+- DSNTNN 적용
+- Self-attention을 통해 SQ 반영
+- RR spectral density의 entropy -> Abnormal resp 감지 -> time loss에 더 많은 가중치
+
+
 * idea
 - fre + time loss -> loss
 - 과거의 추정치 연결되어 활용 필요 -> network structure
@@ -12,7 +20,7 @@
 - second peak로 빠짐, ground도 마찬가지
 - gt 패턴 자체가 abnormal
 - 저주파 fluctuation: rr과 관련 없는 저주파 잡음이 ppg에 존재
-- 높은 rr: 고주파 추정을 아예 못한 + 저주파 fluctuation + 신호 lost
+- 높은 rr: 고주파 추정을 아예 못함 + 저주파 fluctuation + 신호 lost
 - 낮은 rr 추정 못함 + 사각파형 resp
 - 저주파 second peak로 빠짐
 - 부정맥
