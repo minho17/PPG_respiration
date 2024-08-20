@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import biosppy
+# import biosppy
 import scipy
 from sklearn.metrics import mean_squared_error 
 from datetime import datetime
@@ -56,129 +56,57 @@ class log():
             with open(self.path, "a") as file:
                 file.write(text)
 
-def cal_performance2(data,fs, win_anal, win_move, n_win, true_resp,flag_debug = 0):
-    n_data = data.shape[0]
-    n_sub = int(n_data/n_win)
 
+def cal_performance1(data,fs, win_anal, win_move, raw_ppg, flag_pic = 0):
+    n_win = data.shape[0]
+    metric = np.zeros((n_win,2))
+
+    if flag_pic != 0:
+        path_fic = flag_pic + '/pic/' + str(int(win_anal/fs))
+        if os.path.isdir(path_fic) == 0:
+            os.makedirs(path_fic)
+
+    for i in range(n_win):
+        temp_sig = data[i,:,0].copy()
+        temp_sig = temp_sig - np.mean(temp_sig)
+        rr_sig,freq_sig,Y_sig = cal_resp1(temp_sig,fs,0)
+
+        temp_resp = data[i,:,1].copy()
+        temp_resp = temp_resp - np.mean(temp_resp)
+        rr_resp,freq_resp,Y_resp  = cal_resp1(temp_resp,fs,0)
+        metric[i,0] = np.abs( rr_sig - rr_resp )
+        metric[i,1] = rr_resp
+
+        if flag_pic != 0:
+            temp_ppg = raw_ppg[i,:].copy()
+            temp_ppg = temp_ppg - np.mean(temp_ppg)
+
+            file_save = path_fic + '/' +  str(i) + '_' + str(metric[i,0]) + '.jpg'
+            plt.figure(1)
+            plt.subplot(5,1,1)
+            plt.plot(temp_ppg)
+            plt.subplot(5,1,2)
+            plt.plot(temp_sig)
+            plt.subplot(5,1,3)
+            plt.plot(temp_resp)
+            plt.subplot(5,1,4)
+            plt.plot(freq_sig,Y_sig)
+            ind = np.argmax(Y_sig)
+            plt.plot(freq_sig[ind],Y_sig[ind],'*')
+            plt.subplot(5,1,5)
+            plt.plot(freq_resp,Y_resp)
+            ind = np.argmax(Y_resp)
+            plt.plot(freq_resp[ind],Y_resp[ind],'*')
+            plt.savefig(file_save)
+            plt.close()
+
+    rr_mae = np.mean(metric[:,0])
+    true_rr = np.mean(metric[:,1])
     mse = mean_squared_error(data[:,:,0],data[:,:,1])
-    rr_mae = np.zeros((n_sub,2))
-    for i in range(n_sub):
-        rr_mae[i,:] = cal_resp_w2(data,fs,win_anal, win_move, 0)
-
-        # if flag_debug == 1: #(n_sub > 1 and i == 5) or 
-        #     plt.subplot(2,1,1)
-        #     plt.plot(re_data)
-        #     plt.subplot(2,1,2)
-        #     plt.plot(true_resp[i,:])
-        #     plt.show()
-
-        #     a=1
-    rr_mae = np.mean(rr_mae,axis = 0)
-
-    return mse , rr_mae
-
-
-def cal_performance1(data,fs, win_anal, win_move, n_win, raw_sig, flag_pic = 0):
-    n_data = data.shape[0]
-    n_sub = int(n_data/n_win)
-
-    mse = mean_squared_error(data[:,:,0],data[:,:,1])
-    rr_mae = np.zeros((n_sub,2))
-    true_rr = np.zeros((n_sub,2))
-    for i in range(n_sub):
-        re_data = np.zeros((win_anal + win_move * (n_win-1),2))
-        for i1 in range(n_win):
-            w_start = win_move*i1
-            re_data[w_start:w_start+win_anal,0] = re_data[w_start:w_start+win_anal,0] + (data[ i*n_win + i1,:,0].copy() )
-            re_data[w_start:w_start+win_anal,1] = re_data[w_start:w_start+win_anal,1] + np.ones((win_anal))
-
-        re_data = np.divide(re_data[:,0],re_data[:,1])
-        rr_mae[i,:], true_rr[i,:] = cal_resp_w1(re_data,raw_sig[i,:,:],fs,0,flag_pic)
-
-        # if flag_debug == 1: #(n_sub > 1 and i == 5) or 
-        #     plt.subplot(2,1,1)
-        #     plt.plot(re_data)
-        #     plt.subplot(2,1,2)
-        #     plt.plot(true_resp[i,:])
-        #     plt.show()
-
-        #     a=1
-    rr_mae = np.mean(rr_mae,axis = 0)
-    true_rr = np.mean(true_rr,axis = 0)
-
+    
     return mse , rr_mae, true_rr
 
     # return mse, rr_mae
-
-def cal_performance0(data,fs):
-    n_data = data.shape[0]
-    mse = mean_squared_error(data[:,:,0],data[:,:,1])
-
-    rr_mae = np.zeros((n_data))
-    for i in range(n_data):
-        # rr_mae[0] = rr_mae[0] + np.abs(cal_resp1(data[i,:,0],fs,0) - cal_resp1(data[i,:,1],fs,0))
-        # rr_mae[1] = rr_mae[1] + np.abs(cal_resp1(data[i,:,0],fs,1) - cal_resp1(data[i,:,1],fs,1))
-        rr_mae[i] = np.abs(cal_resp1(data[i,:,0],fs,2) - cal_resp1(data[i,:,1],fs,2))
-
-    rr_mae_temp = rr_mae.copy()
-    rr_mae = np.mean(rr_mae)
-
-    # if rr_mae == 0:
-    #     aa0 = np.squeeze(data[0,:,0])
-    #     aa1 = np.squeeze(data[0,:,1])
-    #     plt.subplot(4,1,1)
-    #     plt.plot(aa0)
-    #     plt.subplot(4,1,2)
-    #     plt.plot(aa1)
-        
-
-    #     [freq,Y] = scipy.signal.periodogram(aa0, fs)
-    #     ind = np.argmax(Y)
-    #     rr = freq[ind] * 60
-
-    #     plt.subplot(4,1,3)
-    #     plt.plot(freq,Y)
-    #     [freq2,Y2] = scipy.signal.periodogram(aa1, fs)
-    #     plt.subplot(4,1,4)
-    #     plt.plot(freq2,Y2)
-    #     plt.show()
-
-    #     ind2 = np.argmax(Y2)
-    #     rr2 = freq2[ind2] * 60
-
-    #     a=1
-
-    return mse, rr_mae
-
-
-def cal_resp_w2(data,fs,win_anal0, win_move0, flag_method):
-    win_anal = [32*fs,64*fs]
-    win_move = [3*fs,6*fs]
-    result = np.zeros((2))
-
-    n_seg = data.shape[0]
-    for i in range(2):
-        n_anal_seg = int((win_anal[i] - win_anal0) / win_move0) + 1
-        n_win = n_seg - n_anal_seg + 1
-        metric = np.zeros((n_win))
-
-        for i1 in range(n_win):
-            metric2 = np.zeros((n_anal_seg))
-            for i2 in range(n_anal_seg):
-                temp_sig = data[ i1 + i2 , : , 0 ].copy()
-                temp_sig = temp_sig - np.mean(temp_sig)
-                rr_sig  = cal_resp1(temp_sig,fs,flag_method)
-
-                temp_resp = data[ i1 + i2 , : , 1].copy()
-                temp_resp = temp_resp - np.mean(temp_resp)
-                rr_resp  = cal_resp1(temp_resp,fs,flag_method)
-                metric2[i2] = np.abs( rr_sig - rr_resp )
-
-            metric[i1] = np.mean(metric2)
-        result[i] = np.mean(metric)
-
-    return result
-
 
 def cal_resp_w1(sig,raw_sig,fs,flag_method,flag_pic=0):
     win_anal = [32*fs,64*fs]
@@ -243,7 +171,7 @@ def cal_resp_w1(sig,raw_sig,fs,flag_method,flag_pic=0):
 
     return result, true_rr
 
-def cal_resp1(sig,fs,flag_method):
+def cal_resp1(sig,fs,flag_method=0):
 
     if flag_method == 0:
         n = len(sig) 
@@ -281,7 +209,6 @@ def cal_resp1(sig,fs,flag_method):
         rr = freq[ind] * 60
 
     return rr,freq,Y
-
 
 
 class EarlyStopping:
