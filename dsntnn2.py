@@ -24,19 +24,17 @@ import torch.nn.functional
 
 
 def linear_expectation(probs, values):
-    # assert(len(values) == probs.ndimension() - 2)
-    # expectation = []
-    # for i in range(2, probs.ndimension()):
-    #     # Marginalise probabilities
-    #     marg = probs
-    #     for j in range(probs.ndimension() - 1, 1, -1):
-    #         if i != j:
-    #             marg = marg.sum(j, keepdim=False)
-    #     # Calculate expectation along axis `i`
-    #     expectation.append((marg * values[len(expectation)]).sum(-1, keepdim=False))
-    # return torch.stack(expectation, -1)
-
-    return (probs * values).sum(-1, keepdim=False)
+    assert(len(values) == probs.ndimension() - 2)
+    expectation = []
+    for i in range(2, probs.ndimension()):
+        # Marginalise probabilities
+        marg = probs
+        for j in range(probs.ndimension() - 1, 1, -1):
+            if i != j:
+                marg = marg.sum(j, keepdim=False)
+        # Calculate expectation along axis `i`
+        expectation.append((marg * values[len(expectation)]).sum(-1, keepdim=False))
+    return torch.stack(expectation, -1)
 
 
 def normalized_linspace(length, dtype=None, device=None):
@@ -71,12 +69,10 @@ def soft_argmax(heatmaps, normalized_coordinates=True):
     else:
         values = [torch.arange(0, d, dtype=heatmaps.dtype, device=heatmaps.device)
                   for d in heatmaps.size()[2:]]
-    
-    values = normalized_linspace(heatmaps.size()[-1], dtype=heatmaps.dtype, device=heatmaps.device) 
     coords = linear_expectation(heatmaps, values)
     # We flip the tensor like this instead of using `coords.flip(-1)` because aten::flip is not yet
     # supported by the ONNX exporter.
-    # coords = torch.cat(tuple(reversed(coords.split(1, -1))), -1)
+    coords = torch.cat(tuple(reversed(coords.split(1, -1))), -1)
     return coords
 
 
@@ -118,8 +114,8 @@ def flat_softmax(inp):
     """Compute the softmax with all but the first two tensor dimensions combined."""
 
     orig_size = inp.size()
-    # flat = inp.view(-1, reduce(mul, orig_size[2:]))
-    flat = torch.nn.functional.softmax(inp, -1)
+    flat = inp.view(-1, reduce(mul, orig_size[2:]))
+    flat = torch.nn.functional.softmax(flat, -1)
     return flat.view(*orig_size)
 
 
@@ -185,39 +181,33 @@ def make_gauss(means, size, sigma, normalize=True):
         normalize: when set to True, the returned Gaussians will be normalized
     """
 
-    # dim_range = range(-1, -(len(size) + 1), -1)
-    # coords_list = [normalized_linspace(s, dtype=means.dtype, device=means.device)
-                #    for s in reversed(size)]
-    
-    coords_list = normalized_linspace(size, dtype=means.dtype, device=means.device)
+    dim_range = range(-1, -(len(size) + 1), -1)
+    coords_list = [normalized_linspace(s, dtype=means.dtype, device=means.device)
+                   for s in reversed(size)]
 
     # PDF = exp(-(x - \mu)^2 / (2 \sigma^2))
 
     # dists <- (x - \mu)^2
-    dists = [(coords_list - mean) ** 2 for mean in means]
+    dists = [(x - mean) ** 2 for x, mean in zip(coords_list, means.split(1, -1))]
 
     # ks <- -1 / (2 \sigma^2)
-    stddevs = 2 * sigma / size 
-    ks = -0.5 * (1 / stddevs) ** 2 
-    exps = [(dist * ks).exp() for dist in dists]
+    stddevs = [2 * sigma / s for s in reversed(size)]
+    ks = [-0.5 * (1 / stddev) ** 2 for stddev in stddevs]
 
-    gauss = torch.zeros((means.shape[0],coords_list.shape[0]), dtype=means.dtype, device=means.device)
+    exps = [(dist * k).exp() for k, dist in zip(ks, dists)]
+
     # Combine dimensions of the Gaussian
-    # gauss = reduce(mul, [
-    #     reduce(lambda t, d: t.unsqueeze(d), filter(lambda d: d != dim, dim_range), dist)
-    #     for dim, dist in zip(dim_range, exps)
-    # ])
+    gauss = reduce(mul, [
+        reduce(lambda t, d: t.unsqueeze(d), filter(lambda d: d != dim, dim_range), dist)
+        for dim, dist in zip(dim_range, exps)
+    ])
 
-    # if not normalize:
-    #     return gauss
+    if not normalize:
+        return gauss
 
     # Normalize the Gaussians
-    # val_sum = reduce(lambda t, dim: t.sum(dim, keepdim=True), dim_range, gauss) + 1e-24
-
-    for i in range(means.shape[0]):
-        gauss[i,:] = exps[i] / (torch.sum(exps[i]) + 1e-24)
-
-    return gauss
+    val_sum = reduce(lambda t, dim: t.sum(dim, keepdim=True), dim_range, gauss) + 1e-24
+    return gauss / val_sum
 
 
 def average_loss(losses, mask=None):
@@ -259,11 +249,11 @@ def _js(p, q, ndims):
 
 def _divergence_reg_losses(heatmaps, mu_t, sigma_t, divergence):
     ndims = mu_t.size(-1)
-    # assert heatmaps.dim() == ndims + 2, 'expected heatmaps to be a {}D tensor'.format(ndims + 2)
-    # assert heatmaps.size()[:-ndims] == mu_t.size()[:-1]
+    assert heatmaps.dim() == ndims + 2, 'expected heatmaps to be a {}D tensor'.format(ndims + 2)
+    assert heatmaps.size()[:-ndims] == mu_t.size()[:-1]
 
-    gauss = make_gauss(mu_t, heatmaps.size()[-1], sigma_t)
-    divergences = divergence(heatmaps, gauss, 1)
+    gauss = make_gauss(mu_t, heatmaps.size()[2:], sigma_t)
+    divergences = divergence(heatmaps, gauss, ndims)
     return divergences
 
 

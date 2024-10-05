@@ -15,13 +15,13 @@ import build_model
 # import matplotlib.pyplot as plt
 import util
 import val
-from dataset import dataset1
+from dataset import dataset3
 
 from sklearn.metrics import mean_squared_error 
 
 def main():
 
-    path_target = 'D0_2024-08-18_09_23_56'
+    path_target = 'D0_2024-09-09_12_08_20'
     flag_pic = 1
 
     path_result = os.getcwd() + '/result/' + path_target
@@ -33,15 +33,15 @@ def main():
 
     flag_data=int(path_target[1])
     if flag_data == 0:
-        # path_data = "C:/Users/USER/Desktop/minho/PPG_resp/algorithm/matlab/data1_Capno.mat"
-        path_data = "C:/Users/minho/Desktop/work/kiom/PPG_resp/algorithm/matlab/data1_Capno.mat"
+        path_data = "C:/Users/USER/Desktop/minho/PPG_resp/algorithm/matlab/data1_Capno.mat"
+        # path_data = "C:/Users/minho/Desktop/work/kiom/PPG_resp/algorithm/matlab/data1_Capno.mat"
     elif flag_data == 1:
-        # path_data = "C:/Users/USER/Desktop/minho/PPG_resp/algorithm/matlab/data1_BIDMC.mat"
-        path_data = "C:/Users/minho/Desktop/work/kiom/PPG_resp/algorithm/matlab/data1_BIDMC.mat"
+        path_data = "C:/Users/USER/Desktop/minho/PPG_resp/algorithm/matlab/data1_BIDMC.mat"
+        # path_data = "C:/Users/minho/Desktop/work/kiom/PPG_resp/algorithm/matlab/datsa1_BIDMC.mat"
 
     lr = 0.0001
-    win_anal = 10
-    win_move = 1
+    win_anal = 32
+    win_move = 3
     
     mat_file = loadmat(path_data)
     data = mat_file['data']
@@ -54,6 +54,7 @@ def main():
 
     results = np.zeros((n_folder,3))
     for i in range(n_folder):
+        i =2
         sub_folder = os.path.join(path_result, str(i))
         try:
             load_data = np.load(sub_folder + '/results.npz')
@@ -61,8 +62,8 @@ def main():
             results = results[0:-1,:]
             break
 
-        ind_tr = load_data['ind_tr']
-        ind_val = load_data['ind_val']
+        # ind_tr = load_data['ind_tr']
+        # ind_val = load_data['ind_val']
         result = load_data['result']
         pred = load_data['result']
         flag_data = load_data['flag_data']
@@ -72,21 +73,21 @@ def main():
         gc.collect()
         device = torch.device('cuda:0' if torch.cuda.is_available() else "cpu")
 
-        model = build_model.Correncoder_model( [8,8,8], [150,75,50], [20,20,10], 0.5).to(device)
+        model = build_model.CNN1( [8,8,8,8], [150,75,50,30], [20,20,10], 0.1).to(device)
         loss_func = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
         scaler = torch.cuda.amp.GradScaler(enabled=True)
         stopper = util.EarlyStopping(best_fitness = 9999, patience = 5)
         [model,optim,_] = util.load(ckpt_dir = sub_folder + '/model' , net=model, optim=optimizer)
 
-        te_data = dataset1(ind_te, data, win_anal, win_move)
+        te_data = dataset3(ind_te, data, win_anal, win_move,fs,0)
         loader_te = DataLoader(te_data, batch_size=1, shuffle=False, num_workers=2)
 
         model.eval()
         if flag_pic == 0:
-            [results[i,0], results[i,1], pred, true_rr] = val.val1(loader_te,model,device,te_data,win_anal,win_move,fs)
+            [results[i,0], results[i,1], pred, true_rr] = val.val3(loader_te,model,device,te_data,win_anal,win_move,fs)
         else:
-            [results[i,0], results[i,1], pred, true_rr] = val.val1(loader_te,model,device,te_data,win_anal,win_move,fs,sub_folder)
+            [results[i,0], results[i,1], pred, true_rr] = val.val3(loader_te,model,device,te_data,win_anal,win_move,fs,sub_folder)
  
         log.w("Sub_" + str(ind_te) + ": " + str('{:.3f}'.format(results[i,0])) + " / " + str('{:.3f}'.format(results[i,1])) + "  // True RR: " + str('{:.3f}'.format(true_rr)) +"\n")
 
