@@ -12,7 +12,7 @@ from sklearn.utils import shuffle
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import build_model
-from pytorch_model_summary import summary
+# from pytorch_model_summary import summary
 # import matplotlib.pyplot as plt
 import util
 import val
