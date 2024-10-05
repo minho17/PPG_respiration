@@ -1,5 +1,6 @@
 import os
 
+print("start cord")
 path = "/root"
 file_list = os.listdir(path)
 
