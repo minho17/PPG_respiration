@@ -18,7 +18,7 @@ import util
 import val
 from dataset import dataset3
 
-from sklearn.metrics import mean_squared_error 
+# from sklearn.metrics import mean_squared_error 
 import torch.nn as nn
 
 def main():
