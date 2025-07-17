@@ -6,4 +6,7 @@ The provided package includes pretrained models required to evaluate data from a
 - make_data1.m : preprocessing the data into a format compatible with the proposed framework (the CapnoBase or BIDMC dataset must be acquired in advance to run this code)
 - test.py : code for running the proposed framework
 
-2. 
+2. Performance verification
+'result.txt' file shows the simulation result as below:
+
+ 
