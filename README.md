@@ -7,7 +7,7 @@ The provided package includes pretrained models required to evaluate data from a
  - test.py : code for running the proposed framework
 
 2. Performance verification  
- 'result.txt' file shows the simulation results as follows:
+  'result.txt' file shows the simulation results as follows:
  
    Data: 1 / win_anal: 960 / win_move: 90  
    Sub_7: 1.012 / 0.887 / 1.000 / 1.050 / 3.837 / 0.625 / 0.550
