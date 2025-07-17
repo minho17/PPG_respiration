@@ -17,7 +17,9 @@ This result correspond to Subject 7 from Data1 (BIDMC), and the seven scores rep
 For detailed descriptions of each model and method, please refer to the paper.
 
 This simulation was conducted under the following conditions.
-- Matlab
+- Matlab R2023a
+- Python 3.9.12
+- Pytorch 1.10.0
 
 
  
