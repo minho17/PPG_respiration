@@ -1,3 +1,5 @@
+# Copyright 2025 Minho Choi
+# Licensed under the Apache License, Version 2.0 (the "License");
 
 import numpy as np
 from scipy.io import loadmat
